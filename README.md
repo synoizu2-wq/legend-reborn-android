@@ -1,69 +1,34 @@
-# Legend Reborn Android — source + cloud APK build
+# Legend Reborn Android
 
-This is an original, small Godot 4.3 prototype inspired by turn-based trading-card duels.
-It is **not** the original Yu-Gi-Oh! The Legend Reborn game and contains no proprietary
-source code, card art, music, or original game assets.
+An original Godot 4.3 mobile prototype inspired by turn-based trading-card duels. This is not the original Yu-Gi-Oh! The Legend Reborn game and contains no proprietary game code or assets.
 
-## What this repository contains
+## Project contents
 
-- A playable starter duel prototype (`Main.tscn`, `scripts/main.gd`)
-- 40 generated placeholder cards
-- Android export preset targeting ARM64
-- GitHub Actions workflow to build a signed Release APK in the cloud
+- `Main.tscn`: main scene
+- `scripts/main.gd`: duel logic and generated 40-card training deck
+- `cards.json`: sample card-data format
+- `project.godot`: Godot 4.3 project settings
+- `export_presets.cfg`: Android ARM64 export preset
+- `.github/workflows/android-release.yml`: cloud APK build
 
-## Important before running the workflow
+## Build an APK
 
-1. Change this GitHub repository to **Private** before the first build. The first run
-   generates a signing key and uploads it as a short-lived artifact so it can be saved
-   as GitHub Actions secrets. Do not expose this artifact publicly.
-2. The workflow uses Godot 4.3 and `barichello/godot-ci:4.3`, including Android export
-   templates and Android SDK tooling.
-3. Open the repository's **Actions** tab and run **Build signed Android Release APK**
-   using **Run workflow** (or push a commit to `main`).
+Every push to `main` runs the Android build workflow. It installs Android SDK packages, downloads Godot 4.3 and its export templates, validates the project files, imports the project, exports a signed ARM64 APK, and uploads it as the `LegendReborn-Android-APK` workflow artifact.
 
-## First build: save the signing key for future updates
+To download it, open the repository's **Actions** tab, select the latest successful **Build Android APK** run, and download the artifact.
 
-The first successful workflow run creates two artifacts:
+The current workflow creates a temporary signing key for each build. This is suitable for testing, but APKs from separate runs will not share the same signing identity and therefore cannot be installed as in-place updates over one another. A persistent private keystore and GitHub Actions secrets should be configured before distributing updates.
 
-- `LegendReborn-Android-Release`: the installable signed APK.
-- `LegendReborn-Release-Signing-Material`: contains a Base64 keystore and credentials.
+## Device target
 
-Download the signing-material artifact immediately and keep it private. In the repository,
-go to **Settings → Secrets and variables → Actions → New repository secret** and create:
-
-- `ANDROID_KEYSTORE_BASE64`: the full contents of `ANDROID_KEYSTORE_BASE64.txt`
-- `ANDROID_KEY_ALIAS`: value of `ANDROID_KEY_ALIAS` in `signing-credentials.txt`
-- `ANDROID_KEYSTORE_PASSWORD`: value of `ANDROID_KEYSTORE_PASSWORD`
-- `ANDROID_KEY_PASSWORD`: value of `ANDROID_KEY_PASSWORD`
-
-After saving all four secrets, future workflow runs reuse the same signing key. Do not
-lose the keystore or passwords: Android will not allow an in-place update signed with a
-different key. If you lose the key, users generally must uninstall the old app before
-installing a newly signed build.
-
-## Download the APK
-
-After the workflow completes, open the workflow run in the **Actions** tab, scroll to
-**Artifacts**, and download `LegendReborn-Android-Release`. Extract the APK and install it
-on the Samsung Galaxy A04. Android may ask you to allow installation from that browser or
-file manager.
-
-## Build details
-
-- Android package ID: `org.synoizu2wq.legendrebornandroid`
+- Package ID: `org.synoizu2wq.legendrebornandroid`
 - Architecture: ARM64
 - Renderer: Godot Compatibility (OpenGL)
 - Internet permission: disabled
 - Version: 1.0.0 (version code 1)
 
-## Prototype limitations
+## Prototype scope
 
-This is a first gameplay prototype, not a faithful recreation. It currently has simplified
-combat and one monster per side. It does not yet implement the complete official rules,
-card effects, deck editor, collection, animations, sound, online play, or original game
-content. The APK has not been built or device-tested yet; the workflow must run successfully
-before an installable APK exists.
+The current prototype has simplified combat, one monster per side, a generated training deck, and basic draw/summon/attack/end-turn actions. It does not yet implement full official trading-card rules, card effects, deck editing, collection management, animations, sound, online play, or original game assets.
 
-## Build source
-
-The GitHub Actions workflow is `.github/workflows/android-release.yml`.
+The APK must pass the GitHub Actions export and artifact-upload steps before it is considered built. Device installation and gameplay still need to be tested on the Samsung Galaxy A04.
