@@ -41,10 +41,54 @@ jobs:
       - name: Configure temporary Android signing key
         shell: bash
         run: |
+          set -euo pipefail
           keytool -genkeypair -v -keystore "$RUNNER_TEMP/legend-reborn-release.keystore" -storepass android -keypass android -alias legend-reborn -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Legend Reborn, OU=Build, O=Synoizu, L=Unknown, ST=Unknown, C=EG"
-          sed -i "s|^keystore/release=.*|keystore/release=\\"$RUNNER_TEMP/legend-reborn-release.keystore\\"|" export_presets.cfg
-          sed -i "s|^keystore/release_user=.*|keystore/release_user=\\\"legend-reborn\\\"|" export_presets.cfg
-          sed -i "s|^keystore/release_password=.*|keystore/release_password=\\\"android\\\"|" export_presets.cfg
+          export LEGEND_KEYSTORE="$RUNNER_TEMP/legend-reborn-release.keystore"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("export_presets.cfg")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          values = {
+              "keystore/release": os.environ["LEGEND_KEYSTORE"],
+              "keystore/release_user": "legend-reborn",
+              "keystore/release_password": "android",
+          }
+          for key, value in values.items():
+              prefix = key + "="
+              matches = [i for i, line in enumerate(lines) if line.startswith(prefix)]
+              if len(matches) != 1:
+                  raise SystemExit(f"Expected exactly one {key} entry, found {len(matches)}")
+              lines[matches[0]] = prefix + json.dumps(value)
+          path.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+          PY
+
+      - name: Validate project files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f project.godot
+          test -f Main.tscn
+          test -f scripts/main.gd
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          scene = Path("Main.tscn").read_text(encoding="utf-8")
+          assert 'path="res://scripts/main.gd"' in scene, "Main.tscn script path is incorrect"
+          script = Path("scripts/main.gd").read_text(encoding="utf-8")
+          assert "func _ready()" in script and "func _cpu_turn()" in script, "Game script is incomplete"
+          cards = json.loads(Path("cards.json").read_text(encoding="utf-8"))
+          assert isinstance(cards.get("cards"), list) and cards["cards"], "cards.json has no cards"
+          preset = Path("export_presets.cfg").read_text(encoding="utf-8")
+          assert '[preset.0]' in preset and 'platform="Android"' in preset, "Android preset missing"
+          for key in ("keystore/release", "keystore/release_user", "keystore/release_password"):
+              assert len(re.findall(r"^" + re.escape(key) + r"=", preset, re.M)) == 1, f"Missing or duplicate {key}"
+          print("Project file validation passed.")
+          PY
 
       - name: Import project
         run: godot --headless --editor --path . --quit
