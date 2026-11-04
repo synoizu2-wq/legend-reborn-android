@@ -62,7 +62,7 @@ jobs:
               if len(matches) != 1:
                   raise SystemExit(f"Expected exactly one {key} entry, found {len(matches)}")
               lines[matches[0]] = prefix + json.dumps(value)
-          path.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY
 
       - name: Validate project files
