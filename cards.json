@@ -1,0 +1,22 @@
+{
+  "note": "Original placeholder training cards. Replace only with assets and data you are authorized to use.",
+  "cards": [
+    {
+      "id": "training_monster_01",
+      "name": "Training Monster 01",
+      "type": "monster",
+      "atk": 1500,
+      "def": 1200
+    },
+    {
+      "id": "training_spell_01",
+      "name": "Training Spell 01",
+      "type": "spell"
+    },
+    {
+      "id": "training_trap_01",
+      "name": "Training Trap 01",
+      "type": "trap"
+    }
+  ]
+}
