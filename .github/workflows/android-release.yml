@@ -42,9 +42,9 @@ jobs:
         shell: bash
         run: |
           keytool -genkeypair -v -keystore "$RUNNER_TEMP/legend-reborn-release.keystore" -storepass android -keypass android -alias legend-reborn -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Legend Reborn, OU=Build, O=Synoizu, L=Unknown, ST=Unknown, C=EG"
-          sed -i "s|^keystore/release=.*|keystore/release=$RUNNER_TEMP/legend-reborn-release.keystore|" export_presets.cfg
-          sed -i "s|^keystore/release_user=.*|keystore/release_user=legend-reborn|" export_presets.cfg
-          sed -i "s|^keystore/release_password=.*|keystore/release_password=android|" export_presets.cfg
+          sed -i "s|^keystore/release=.*|keystore/release=\\"$RUNNER_TEMP/legend-reborn-release.keystore\\"|" export_presets.cfg
+          sed -i "s|^keystore/release_user=.*|keystore/release_user=\\\"legend-reborn\\\"|" export_presets.cfg
+          sed -i "s|^keystore/release_password=.*|keystore/release_password=\\\"android\\\"|" export_presets.cfg
 
       - name: Import project
         run: godot --headless --editor --path . --quit
