@@ -1,0 +1,73 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '**.gd'
+      - '**.tscn'
+      - '**.tres'
+      - '**.godot'
+      - '**.json'
+      - 'export_presets.cfg'
+      - '.github/workflows/android-release.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Export Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Download Godot 4.3 and export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.3.stable"
+          curl -L --fail --retry 3 -o godot.zip https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          sudo install -m 0755 Godot_v4.3-stable_linux.x86_64 /usr/local/bin/godot
+          curl -L --fail --retry 3 -o templates.tpz https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
+          unzip -q templates.tpz -d templates
+          cp templates/templates/* "$HOME/.local/share/godot/export_templates/4.3.stable/"
+
+      - name: Configure temporary Android signing key
+        shell: bash
+        run: |
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/legend-reborn-release.keystore" -storepass android -keypass android -alias legend-reborn -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Legend Reborn, OU=Build, O=Synoizu, L=Unknown, ST=Unknown, C=EG"
+          sed -i "s|^keystore/release=.*|keystore/release=$RUNNER_TEMP/legend-reborn-release.keystore|" export_presets.cfg
+          sed -i "s|^keystore/release_user=.*|keystore/release_user=legend-reborn|" export_presets.cfg
+          sed -i "s|^keystore/release_password=.*|keystore/release_password=android|" export_presets.cfg
+
+      - name: Import project
+        run: godot --headless --editor --path . --quit
+
+      - name: Export signed release APK
+        run: |
+          mkdir -p build
+          godot --headless --path . --export-release "Android" build/LegendReborn-Android.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LegendReborn-Android-APK
+          path: build/LegendReborn-Android.apk
+          if-no-files-found: error
+          retention-days: 30
