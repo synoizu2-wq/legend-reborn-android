@@ -98,6 +98,11 @@ jobs:
           test -n "$JAVA_HOME"
           test -x "$JAVA_HOME/bin/java"
           test -x "$ANDROID_HOME/platform-tools/adb"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+          adb start-server
+          adb version
+          adb devices -l
           mkdir -p "$HOME/.config/godot"
           python3 - <<'PY'
           import json
@@ -123,7 +128,7 @@ jobs:
       - name: Export signed release APK
         run: |
           mkdir -p build
-          godot --headless --path . --export-release "Android" build/LegendReborn-Android.apk
+          godot --headless --verbose --path . --export-release "Android" build/LegendReborn-Android.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
