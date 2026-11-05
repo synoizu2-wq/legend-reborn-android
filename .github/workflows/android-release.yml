@@ -98,6 +98,8 @@ jobs:
           assert isinstance(cards.get("cards"), list) and cards["cards"], "cards.json has no cards"
           preset = Path("export_presets.cfg").read_text(encoding="utf-8")
           assert '[preset.0]' in preset and 'platform="Android"' in preset, "Android preset missing"
+          project = Path("project.godot").read_text(encoding="utf-8")
+          assert "textures/vram_compression/import_etc2_astc=true" in project, "Android export requires ETC2/ASTC texture import"
           for key in ("keystore/release", "keystore/release_user", "keystore/release_password"):
               assert len(re.findall(r"^" + re.escape(key) + r"=", preset, re.M)) == 1, f"Missing or duplicate {key}"
           print("Project file validation passed.")
